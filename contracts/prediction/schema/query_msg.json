@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "QueryMsg",
+  "anyOf": [
+    {
+      "description": "Query current configuration",
+      "type": "object",
+      "required": [
+        "config"
+      ],
+      "properties": {
+        "config": {
+          "type": "object"
+        }
+      }
+    },
+    {
+      "description": "Query current state",
+      "type": "object",
+      "required": [
+        "state"
+      ],
+      "properties": {
+        "state": {
+          "type": "object"
+        }
+      }
+    },
+    {
+      "description": "Query round by epoch",
+      "type": "object",
+      "required": [
+        "round"
+      ],
+      "properties": {
+        "round": {
+          "type": "object",
+          "required": [
+            "epoch"
+          ],
+          "properties": {
+            "epoch": {
+              "$ref": "#/definitions/Uint128"
+            }
+          }
+        }
+      }
+    },
+    {
+      "description": "Query bet by user and epoch",
+      "type": "object",
+      "required": [
+        "bet"
+      ],
+      "properties": {
+        "bet": {
+          "type": "object",
+          "required": [
+            "epoch",
+            "user"
+          ],
+          "properties": {
+            "epoch": {
+              "$ref": "#/definitions/Uint128"
+            },
+            "user": {
+              "$ref": "#/definitions/HumanAddr"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "definitions": {
+    "HumanAddr": {
+      "type": "string"
+    },
+    "Uint128": {
+      "type": "string"
+    }
+  }
+}
