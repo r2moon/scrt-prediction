@@ -45,7 +45,6 @@ impl Round {
             && env.block.time >= self.start_time
             && env.block.time <= self.lock_time
             && self.open_price.is_none()
-            && self.close_price.is_none()
     }
 
     pub fn claimable(&self, env: Env) -> bool {
@@ -61,16 +60,18 @@ impl Round {
             && self.close_price.is_some()
             && Some(self.open_price) == Some(self.close_price))
             || (self.close_price.is_none() && env.block.time > self.end_time + grace_interval)
+            || (env.block.time > self.lock_time
+                && (self.up_amount.is_zero() || self.down_amount.is_zero()))
     }
 
     pub fn claimable_amount(&self, env: Env, user_bet: Bet, grace_interval: u64) -> Uint128 {
         if self.claimable(env.clone()) {
             let win_bet_amount = if Some(self.close_price) > Some(self.open_price)
-                && user_bet.position == Position::UP
+                && user_bet.position == Position::Up
             {
                 self.up_amount
             } else if Some(self.close_price) < Some(self.open_price)
-                && user_bet.position == Position::DOWN
+                && user_bet.position == Position::Down
             {
                 self.down_amount
             } else {
@@ -85,9 +86,8 @@ impl Round {
         Uint128::zero()
     }
 
-    pub fn executable(&self, env: Env, grace_interval: u64) -> bool {
+    pub fn executable(&self, env: Env) -> bool {
         env.block.time >= self.end_time
-            && env.block.time <= self.end_time + grace_interval
             && (self.is_genesis || self.open_price.is_some())
             && self.close_price.is_none()
     }
@@ -98,9 +98,9 @@ impl Round {
 
     // pub fn win_position(&self) -> Position {
     //     if Some(self.open_price) > Some(self.close_price) {
-    //         Position::DOWN
+    //         Position::Down
     //     } else if Some(self.open_price) > Some(self.close_price) {
-    //         Position::UP
+    //         Position::Up
     //     } else {
     //         Position::DRAW
     //     }

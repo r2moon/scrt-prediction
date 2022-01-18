@@ -12,7 +12,8 @@
   "dependencies": {
     "@types/chai": "^4.3.0",
     "chai": "^4.3.4",
-    "secret-polar": "^0.9.5"
+    "secret-polar": "^0.9.5",
+    "secretjs": "^0.17.5"
   },
   "devDependencies": {
     "prettier": "^2.5.1"

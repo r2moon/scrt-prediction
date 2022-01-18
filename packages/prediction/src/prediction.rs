@@ -93,8 +93,8 @@ pub struct ConfigResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Position {
-    UP,
-    DOWN,
+    Up,
+    Down,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -102,4 +102,14 @@ pub struct State {
     pub epoch: Uint128,
     pub total_fee: Uint128,
     pub paused: bool,
+}
+
+impl ToString for Position {
+    fn to_string(&self) -> String {
+        if self == &Position::Up {
+            String::from("up")
+        } else {
+            String::from("down")
+        }
+    }
 }

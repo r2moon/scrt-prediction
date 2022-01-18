@@ -18,7 +18,15 @@ pub fn bet<S: Storage, A: Api, Q: Querier>(
     position: Position,
     amount: Uint128,
 ) -> HandleResult {
+    if amount.is_zero() {
+        return Err(StdError::generic_err("Amount is zero"));
+    }
+
     let state: State = read_state(&deps.storage)?;
+    if state.paused {
+        return Err(StdError::generic_err("Paused"));
+    }
+
     let mut round: Round = read_round(&deps.storage, state.epoch)?;
 
     if round.bettable(env) == false {
@@ -37,12 +45,10 @@ pub fn bet<S: Storage, A: Api, Q: Querier>(
 
     round.total_amount = round.total_amount + amount;
 
-    if position == Position::UP {
+    if position == Position::Up {
         round.up_amount = round.up_amount + amount;
-    } else if position == Position::DOWN {
-        round.down_amount = round.down_amount + amount;
     } else {
-        return Err(StdError::generic_err("Cannot bet DRAW"));
+        round.down_amount = round.down_amount + amount;
     }
 
     store_round(&mut deps.storage, state.epoch, &round)?;
@@ -53,14 +59,18 @@ pub fn bet<S: Storage, A: Api, Q: Querier>(
         deps.api.canonical_address(&user)?,
         &Bet {
             amount,
-            position,
+            position: position.clone(),
             claimed: false,
         },
     )?;
 
     Ok(HandleResponse {
         messages: vec![],
-        log: vec![log("action", "bet"), log("amount", amount)],
+        log: vec![
+            log("action", "bet"),
+            log("amount", amount),
+            log("position", position),
+        ],
         data: None,
     })
 }
@@ -74,7 +84,7 @@ pub fn claim<S: Storage, A: Api, Q: Querier>(
     let round: Round = read_round(&deps.storage, epoch)?;
 
     if !round.claimable(env.clone()) && !round.refundable(env.clone(), config.grace_interval) {
-        return Err(StdError::generic_err("Round is not closed"));
+        return Err(StdError::generic_err("Not able to claim"));
     }
 
     let mut user_bet = read_bet(
@@ -94,7 +104,7 @@ pub fn claim<S: Storage, A: Api, Q: Querier>(
         deps.api.canonical_address(&env.message.sender)?,
         &user_bet,
     )?;
-    let claim_amount = round.claimable_amount(env.clone(), user_bet, config.grace_interval);
+    let claim_amount = round.claimable_amount(env.clone(), user_bet.clone(), config.grace_interval);
 
     if claim_amount.is_zero() {
         return Err(StdError::generic_err("Nothing to claim"));
@@ -110,7 +120,8 @@ pub fn claim<S: Storage, A: Api, Q: Querier>(
         log: vec![
             log("action", "claim"),
             log("epoch", epoch),
-            log("amount", claim_amount),
+            log("amount", user_bet.amount),
+            log("claim_amount", claim_amount),
         ],
         data: None,
     })

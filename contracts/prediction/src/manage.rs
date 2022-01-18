@@ -95,7 +95,7 @@ pub fn execute_round<S: Storage, A: Api, Q: Querier>(
         return Err(StdError::generic_err("Expired"));
     }
 
-    if !round.executable(env.clone(), config.grace_interval) {
+    if !round.executable(env.clone()) {
         return Err(StdError::generic_err("Cannot execute"));
     }
 
@@ -105,26 +105,26 @@ pub fn execute_round<S: Storage, A: Api, Q: Querier>(
     }
     let close_price = price_reference_data.price;
 
-    if !round.is_genesis && round.open_price.is_none() {
-        return Err(StdError::generic_err("Round is not opened"));
-    }
-
     round.close_price = Some(close_price);
 
-    if !round.is_genesis && close_price != round.open_price.unwrap() {
+    if !round.is_genesis
+        && close_price != round.open_price.unwrap()
+        && !round.up_amount.is_zero()
+        && !round.down_amount.is_zero()
+    {
         let open_price = round.open_price.unwrap();
         let mut fee = round.total_amount * config.fee_rate;
         round.reward_amount = (round.total_amount - fee)?;
 
         if close_price > open_price {
             if round.reward_amount < round.up_amount {
-                round.reward_amount = round.total_amount;
-                fee = Uint128::zero();
+                round.reward_amount = round.up_amount;
+                fee = round.down_amount;
             }
         } else {
             if round.reward_amount < round.down_amount {
-                round.reward_amount = round.total_amount;
-                fee = Uint128::zero();
+                round.reward_amount = round.down_amount;
+                fee = round.up_amount;
             }
         }
 
@@ -165,7 +165,7 @@ pub fn execute_round<S: Storage, A: Api, Q: Querier>(
         log: vec![
             log("action", "execute"),
             log("epoch_finish", progressing_epoch),
-            log("epoch_start", betting_epoch),
+            log("epoch_lock", betting_epoch),
             log("close_price", close_price),
         ],
         data: None,

@@ -225,8 +225,8 @@
     "Position": {
       "type": "string",
       "enum": [
-        "u_p",
-        "d_o_w_n"
+        "up",
+        "down"
       ]
     },
     "Uint128": {

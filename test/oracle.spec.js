@@ -1,5 +1,6 @@
 const { expect, use } = require('chai');
 const { Contract, getAccountByName, polarChai } = require('secret-polar');
+const { checkLogs } = require('./utils');
 
 use(polarChai);
 
@@ -49,12 +50,9 @@ describe('oracle', () => {
         owner: alice.account.address,
       });
 
-      expect(ex_response.logs[0].events[1].attributes[1].key).to.be.equal(
-        'action',
-      );
-      expect(ex_response.logs[0].events[1].attributes[1].value).to.be.equal(
-        'update_config',
-      );
+      checkLogs(ex_response, {
+        action: 'update_config',
+      });
     });
 
     after(async () => {
@@ -100,26 +98,11 @@ describe('oracle', () => {
         }),
       ).to.respondWith(alice.account.address);
 
-      expect(ex_response.logs[0].events[1].attributes[1].key).to.be.equal(
-        'action',
-      );
-      expect(ex_response.logs[0].events[1].attributes[1].value).to.be.equal(
-        'register_asset',
-      );
-
-      expect(ex_response.logs[0].events[1].attributes[2].key).to.be.equal(
-        'asset_key',
-      );
-      expect(ex_response.logs[0].events[1].attributes[2].value).to.be.equal(
-        'native_token_uscrt',
-      );
-
-      expect(ex_response.logs[0].events[1].attributes[3].key).to.be.equal(
-        'feeder',
-      );
-      expect(ex_response.logs[0].events[1].attributes[3].value).to.be.equal(
-        alice.account.address,
-      );
+      checkLogs(ex_response, {
+        action: 'register_asset',
+        asset_key: 'native_token_uscrt',
+        feeder: alice.account.address,
+      });
     });
 
     it('register snip20 asset by owner', async () => {
@@ -145,26 +128,11 @@ describe('oracle', () => {
         }),
       ).to.respondWith(alice.account.address);
 
-      expect(ex_response.logs[0].events[1].attributes[1].key).to.be.equal(
-        'action',
-      );
-      expect(ex_response.logs[0].events[1].attributes[1].value).to.be.equal(
-        'register_asset',
-      );
-
-      expect(ex_response.logs[0].events[1].attributes[2].key).to.be.equal(
-        'asset_key',
-      );
-      expect(ex_response.logs[0].events[1].attributes[2].value).to.be.equal(
-        'snip20_token_test_token',
-      );
-
-      expect(ex_response.logs[0].events[1].attributes[3].key).to.be.equal(
-        'feeder',
-      );
-      expect(ex_response.logs[0].events[1].attributes[3].value).to.be.equal(
-        alice.account.address,
-      );
+      checkLogs(ex_response, {
+        action: 'register_asset',
+        asset_key: 'snip20_token_test_token',
+        feeder: alice.account.address,
+      });
     });
   });
 
@@ -225,26 +193,11 @@ describe('oracle', () => {
         .to.be.greaterThanOrEqual(currentTime - 2)
         .to.be.lessThanOrEqual(currentTime + 2);
 
-      expect(ex_response.logs[0].events[1].attributes[1].key).to.be.equal(
-        'action',
-      );
-      expect(ex_response.logs[0].events[1].attributes[1].value).to.be.equal(
-        'feed_price',
-      );
-
-      expect(ex_response.logs[0].events[1].attributes[2].key).to.be.equal(
-        'asset_key',
-      );
-      expect(ex_response.logs[0].events[1].attributes[2].value).to.be.equal(
-        'native_token_uscrt',
-      );
-
-      expect(ex_response.logs[0].events[1].attributes[3].key).to.be.equal(
-        'price',
-      );
-      expect(ex_response.logs[0].events[1].attributes[3].value).to.be.equal(
-        '10.3',
-      );
+      checkLogs(ex_response, {
+        action: 'feed_price',
+        asset_key: 'native_token_uscrt',
+        price: '10.3',
+      });
     });
   });
 });
