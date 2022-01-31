@@ -70,7 +70,7 @@ fn query_feeder<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
     asset_info: AssetInfo,
 ) -> StdResult<HumanAddr> {
-    let feeder = read_feeder(&deps.storage, &get_asset_key(asset_info))?;
+    let feeder = read_feeder(&deps.storage, &asset_info.to_raw(deps)?)?;
 
     Ok(deps.api.human_address(&feeder)?)
 }
@@ -79,7 +79,7 @@ fn query_latest_price<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
     asset_info: AssetInfo,
 ) -> StdResult<PriceInfo> {
-    Ok(read_price_info(&deps.storage, get_asset_key(asset_info))?)
+    Ok(read_price_info(&deps.storage, asset_info.to_raw(deps)?)?)
 }
 
 fn assert_owner_privilege<S: Storage, A: Api, Q: Querier>(
@@ -103,17 +103,17 @@ fn feed_price<S: Storage, A: Api, Q: Querier>(
     let mut logs = vec![log("action", "feed_price")];
 
     for price in prices {
-        let asset_key = get_asset_key(price.0);
-        if feeder_raw != read_feeder(&deps.storage, &asset_key)? {
+        let asset_info_raw = price.0.to_raw(deps)?;
+        if feeder_raw != read_feeder(&deps.storage, &asset_info_raw)? {
             return Err(StdError::unauthorized());
         }
 
-        logs.push(log("asset_key", asset_key.clone()));
+        logs.push(log("asset_key", get_asset_key(price.0)));
         logs.push(log("price", price.1));
 
         store_price_info(
             &mut deps.storage,
-            &asset_key,
+            &asset_info_raw,
             PriceInfo {
                 price: price.1,
                 last_updated_time: env.block.time,
@@ -152,11 +152,12 @@ fn register_asset<S: Storage, A: Api, Q: Querier>(
     asset_info: AssetInfo,
     feeder: HumanAddr,
 ) -> HandleResult {
+    let asset_info_raw = asset_info.to_raw(deps)?;
     let asset_key = get_asset_key(asset_info);
 
     store_feeder(
         &mut deps.storage,
-        &asset_key,
+        &asset_info_raw,
         deps.api.canonical_address(&feeder)?,
     )?;
 

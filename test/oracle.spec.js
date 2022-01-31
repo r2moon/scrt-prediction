@@ -110,7 +110,7 @@ describe('oracle', () => {
         { account: owner },
         {
           token: {
-            contract_addr: 'test_token',
+            contract_addr: 'secret10xy2dz4df5rrqsjf8wjreh6ejrqwt6y7a4gunn',
             token_code_hash: 'test_token_code_hash',
             viewing_key: 'test_viewing_key',
           },
@@ -121,7 +121,7 @@ describe('oracle', () => {
       await expect(
         oracleContract.query.feeder({
           token: {
-            contract_addr: 'test_token',
+            contract_addr: 'secret10xy2dz4df5rrqsjf8wjreh6ejrqwt6y7a4gunn',
             token_code_hash: 'test_token_code_hash',
             viewing_key: 'test_viewing_key',
           },
@@ -130,7 +130,7 @@ describe('oracle', () => {
 
       checkLogs(ex_response, {
         action: 'register_asset',
-        asset_key: 'snip20_token_test_token',
+        asset_key: 'snip20_token_secret10xy2dz4df5rrqsjf8wjreh6ejrqwt6y7a4gunn',
         feeder: alice.account.address,
       });
     });

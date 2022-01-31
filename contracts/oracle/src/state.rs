@@ -3,6 +3,7 @@ use cosmwasm_storage::{Bucket, ReadonlyBucket, ReadonlySingleton, Singleton};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use prediction::asset::AssetInfoRaw;
 use prediction::oracle::PriceInfo;
 
 static KEY_CONFIG: &[u8] = b"config";
@@ -23,22 +24,22 @@ pub fn read_config<S: Storage>(storage: &S) -> StdResult<Config> {
 
 pub fn store_feeder<S: Storage>(
     storage: &mut S,
-    asset_key: &String,
+    asset_info: &AssetInfoRaw,
     feeder: CanonicalAddr,
 ) -> StdResult<()> {
-    Bucket::new(PREFIX_FEEDER, storage).save(asset_key.as_bytes(), &feeder)
+    Bucket::new(PREFIX_FEEDER, storage).save(asset_info.as_bytes(), &feeder)
 }
-pub fn read_feeder<S: Storage>(storage: &S, asset_key: &String) -> StdResult<CanonicalAddr> {
-    ReadonlyBucket::new(PREFIX_FEEDER, storage).load(asset_key.as_bytes())
+pub fn read_feeder<S: Storage>(storage: &S, asset_info: &AssetInfoRaw) -> StdResult<CanonicalAddr> {
+    ReadonlyBucket::new(PREFIX_FEEDER, storage).load(asset_info.as_bytes())
 }
 
 pub fn store_price_info<S: Storage>(
     storage: &mut S,
-    asset_key: &String,
+    asset_info: &AssetInfoRaw,
     price_info: PriceInfo,
 ) -> StdResult<()> {
-    Bucket::new(PREFIX_PRICE_INFO, storage).save(&asset_key.as_bytes(), &price_info)
+    Bucket::new(PREFIX_PRICE_INFO, storage).save(&asset_info.as_bytes(), &price_info)
 }
-pub fn read_price_info<S: Storage>(storage: &S, asset_key: String) -> StdResult<PriceInfo> {
-    ReadonlyBucket::new(PREFIX_PRICE_INFO, storage).load(&asset_key.as_bytes())
+pub fn read_price_info<S: Storage>(storage: &S, asset_info: AssetInfoRaw) -> StdResult<PriceInfo> {
+    ReadonlyBucket::new(PREFIX_PRICE_INFO, storage).load(&asset_info.as_bytes())
 }
