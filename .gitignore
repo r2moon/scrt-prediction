@@ -1,3 +1,5 @@
 node_modules
 artifacts
 target
+accounts/mainnet.json
+accounts/testnet.json

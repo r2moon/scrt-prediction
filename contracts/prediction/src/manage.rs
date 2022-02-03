@@ -204,7 +204,7 @@ pub fn withdraw<S: Storage, A: Api, Q: Querier>(
             data: None,
         })
     } else {
-        return Err(StdError::generic_err("No stacked fee"));
+        Err(StdError::generic_err("No stacked fee"))
     }
 }
 

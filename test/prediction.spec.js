@@ -1,4 +1,5 @@
 const { expect, use } = require('chai');
+const BN = require('bn.js');
 const {
   Contract,
   getAccountByName,
@@ -17,6 +18,7 @@ const {
   sleep,
   sleepUntil,
   getScrtBalance,
+  getScrtBalanceWithCustomClient,
 } = require('./utils');
 
 use(polarChai);
@@ -33,6 +35,7 @@ describe('prediction', () => {
       denom: 'uscrt',
     },
   };
+  const txFee = new BN(50000);
   let signingClient;
 
   before(async () => {
@@ -264,8 +267,8 @@ describe('prediction', () => {
         oracle_addr: alice.account.address,
         oracle_code_hash: 'oracle_new_code_hash',
         fee_rate: '0.5',
-        interval: 20,
-        grace_interval: 15,
+        interval: 25,
+        grace_interval: 18,
       });
 
       checkLogs(ex_response, {
@@ -545,7 +548,7 @@ describe('prediction', () => {
     });
   });
 
-  describe('execute', () => {
+  describe('execute_round', () => {
     beforeEach(async () => {
       await oracleContract.tx.feed_price({ account: owner }, [
         [assetInfo, '3'],
@@ -1021,10 +1024,10 @@ describe('prediction', () => {
       const finishedRound = await predictionContract.query.round('2');
       expect(finishedRound.open_price).to.be.equal('5');
       expect(finishedRound.close_price).to.be.equal(closePrice);
-      expect(finishedRound.total_amount).to.be.equal('1020');
+      expect(finishedRound.total_amount).to.be.equal('1000');
       expect(finishedRound.reward_amount).to.be.equal('0');
-      expect(finishedRound.up_amount).to.be.equal('1000');
-      expect(finishedRound.down_amount).to.be.equal('20');
+      expect(finishedRound.up_amount).to.be.equal('0');
+      expect(finishedRound.down_amount).to.be.equal('1000');
       expect(finishedRound.is_genesis).to.be.equal(false);
 
       await expect(predictionContract.query.state()).to.respondWith({
@@ -1042,7 +1045,7 @@ describe('prediction', () => {
     });
   });
 
-  describe.only('claim', () => {
+  describe('claim', () => {
     beforeEach(async () => {
       await oracleContract.tx.feed_price({ account: owner }, [
         [assetInfo, '3'],
@@ -1109,7 +1112,7 @@ describe('prediction', () => {
       ).to.be.revertedWith('Not able to claim');
     });
 
-    it.only('fail to claim reward by loser', async () => {
+    it('fail to claim reward by loser', async () => {
       let genesisRound = await predictionContract.query.round('1');
 
       await bet(predictionContract, alice, '100', 'down', assetInfo);
@@ -1149,7 +1152,7 @@ describe('prediction', () => {
       ).to.be.revertedWith('Nothing to claim');
     });
 
-    it.only('claim by winner', async () => {
+    it('claim by winner', async () => {
       let genesisRound = await predictionContract.query.round('1');
 
       await bet(predictionContract, alice, '100', 'down', assetInfo);
@@ -1181,13 +1184,17 @@ describe('prediction', () => {
       });
 
       let claim_before_bal = await getScrtBalance(alice);
+
       let ex_response = await predictionContract.tx.claim(
         {
           account: alice,
         },
         '2',
       );
-      expect(await getScrtBalance(alice)).to.be.equal(claim_before_bal + 291);
+
+      expect((await getScrtBalance(alice)).toString()).to.be.equal(
+        claim_before_bal.add(new BN(291)).sub(txFee).toString(),
+      );
 
       await expect(
         predictionContract.query.bet('2', alice.account.address),
@@ -1202,6 +1209,326 @@ describe('prediction', () => {
         epoch: '2',
         amount: '100',
         claim_amount: '291',
+      });
+    });
+
+    it('failed to claim again', async () => {
+      let genesisRound = await predictionContract.query.round('1');
+
+      await bet(predictionContract, alice, '100', 'down', assetInfo);
+      await bet(predictionContract, bob, '1000', 'up', assetInfo);
+      await bet(predictionContract, carol, '400', 'down', assetInfo);
+
+      await sleepUntil(genesisRound.end_time);
+
+      let closePrice = '5';
+      await oracleContract.tx.feed_price({ account: owner }, [
+        [assetInfo, closePrice],
+      ]);
+
+      await predictionContract.tx.execute_round({
+        account: operator,
+      });
+
+      let currentRound = await predictionContract.query.round('2');
+
+      await sleepUntil(currentRound.end_time);
+
+      closePrice = '3';
+      await oracleContract.tx.feed_price({ account: owner }, [
+        [assetInfo, closePrice],
+      ]);
+
+      await predictionContract.tx.execute_round({
+        account: operator,
+      });
+
+      await predictionContract.tx.claim(
+        {
+          account: alice,
+        },
+        '2',
+      );
+
+      await expect(
+        predictionContract.tx.claim(
+          {
+            account: alice,
+          },
+          '2',
+        ),
+      ).to.be.revertedWith('Already claimed');
+    });
+
+    it('claim refunded amount after grace period if round was not ended', async () => {
+      let genesisRound = await predictionContract.query.round('1');
+
+      await bet(predictionContract, alice, '100', 'down', assetInfo);
+      await bet(predictionContract, bob, '1000', 'up', assetInfo);
+      await bet(predictionContract, carol, '400', 'down', assetInfo);
+
+      await sleepUntil(genesisRound.end_time);
+
+      let closePrice = '5';
+      await oracleContract.tx.feed_price({ account: owner }, [
+        [assetInfo, closePrice],
+      ]);
+
+      await predictionContract.tx.execute_round({
+        account: operator,
+      });
+
+      let currentRound = await predictionContract.query.round('2');
+
+      await sleepUntil(currentRound.end_time + graceInterval + 5);
+
+      let claim_before_bal = await getScrtBalance(alice);
+      let ex_response = await predictionContract.tx.claim(
+        {
+          account: alice,
+        },
+        '2',
+      );
+
+      expect((await getScrtBalance(alice)).toString()).to.be.equal(
+        claim_before_bal.add(new BN(100)).sub(txFee).toString(),
+      );
+
+      await expect(
+        predictionContract.query.bet('2', alice.account.address),
+      ).to.respondWith({
+        amount: '100',
+        position: 'down',
+        claimed: true,
+      });
+
+      checkLogs(ex_response, {
+        action: 'claim',
+        epoch: '2',
+        amount: '100',
+        claim_amount: '100',
+      });
+    });
+
+    it('claim refunded amount after end time if open price is same as close price', async () => {
+      let genesisRound = await predictionContract.query.round('1');
+
+      await bet(predictionContract, alice, '100', 'down', assetInfo);
+      await bet(predictionContract, bob, '1000', 'up', assetInfo);
+      await bet(predictionContract, carol, '400', 'down', assetInfo);
+
+      await sleepUntil(genesisRound.end_time);
+
+      let closePrice = '5';
+      await oracleContract.tx.feed_price({ account: owner }, [
+        [assetInfo, closePrice],
+      ]);
+
+      await predictionContract.tx.execute_round({
+        account: operator,
+      });
+
+      let currentRound = await predictionContract.query.round('2');
+
+      await sleepUntil(currentRound.end_time);
+
+      closePrice = '5';
+      await oracleContract.tx.feed_price({ account: owner }, [
+        [assetInfo, closePrice],
+      ]);
+
+      await predictionContract.tx.execute_round({
+        account: operator,
+      });
+
+      let claim_before_bal = await getScrtBalance(alice);
+      let ex_response = await predictionContract.tx.claim(
+        {
+          account: alice,
+        },
+        '2',
+      );
+
+      expect((await getScrtBalance(alice)).toString()).to.be.equal(
+        claim_before_bal.add(new BN(100)).sub(txFee).toString(),
+      );
+
+      await expect(
+        predictionContract.query.bet('2', alice.account.address),
+      ).to.respondWith({
+        amount: '100',
+        position: 'down',
+        claimed: true,
+      });
+
+      checkLogs(ex_response, {
+        action: 'claim',
+        epoch: '2',
+        amount: '100',
+        claim_amount: '100',
+      });
+    });
+
+    it('claim refunded amount after lock period one position bet amount is zero', async () => {
+      let genesisRound = await predictionContract.query.round('1');
+
+      await bet(predictionContract, alice, '100', 'down', assetInfo);
+      await bet(predictionContract, carol, '400', 'down', assetInfo);
+
+      await sleepUntil(genesisRound.end_time + 4);
+
+      let claim_before_bal = await getScrtBalance(alice);
+      let ex_response = await predictionContract.tx.claim(
+        {
+          account: alice,
+        },
+        '2',
+      );
+
+      expect((await getScrtBalance(alice)).toString()).to.be.equal(
+        claim_before_bal.add(new BN(100)).sub(txFee).toString(),
+      );
+
+      await expect(
+        predictionContract.query.bet('2', alice.account.address),
+      ).to.respondWith({
+        amount: '100',
+        position: 'down',
+        claimed: true,
+      });
+
+      checkLogs(ex_response, {
+        action: 'claim',
+        epoch: '2',
+        amount: '100',
+        claim_amount: '100',
+      });
+    });
+  });
+
+  describe('pause', () => {
+    const price = '3';
+
+    beforeEach(async () => {
+      await oracleContract.tx.feed_price({ account: owner }, [
+        [assetInfo, price],
+      ]);
+
+      await predictionContract.tx.start_genesis_round({
+        account: owner,
+      });
+    });
+
+    it('fail if msg.sender is not owner', async () => {
+      await expect(
+        predictionContract.tx.pause({ account: alice }),
+      ).to.be.revertedWith('unauthorized');
+    });
+
+    it('pause by owner', async () => {
+      const ex_response = await predictionContract.tx.pause({
+        account: owner,
+      });
+
+      await expect(predictionContract.query.state()).to.respondWith({
+        epoch: '2',
+        total_fee: '0',
+        paused: true,
+      });
+
+      checkLogs(ex_response, {
+        action: 'pause',
+      });
+    });
+
+    it('fail if it is paused', async () => {
+      await predictionContract.tx.pause({
+        account: owner,
+      });
+
+      await expect(
+        predictionContract.tx.pause({ account: owner }),
+      ).to.be.revertedWith('Paused');
+    });
+  });
+
+  describe('withdraw', () => {
+    beforeEach(async () => {
+      await oracleContract.tx.feed_price({ account: owner }, [
+        [assetInfo, '3'],
+      ]);
+      await predictionContract.tx.start_genesis_round({
+        account: owner,
+      });
+    });
+
+    it('fail if msg.sender is not owner', async () => {
+      await expect(
+        predictionContract.tx.withdraw({ account: alice }),
+      ).to.be.revertedWith('unauthorized');
+    });
+
+    it('fail if no stacked fee', async () => {
+      await expect(
+        predictionContract.tx.withdraw({ account: owner }),
+      ).to.be.revertedWith('No stacked fee');
+    });
+
+    it('withdraw to treasury address', async () => {
+      let genesisRound = await predictionContract.query.round('1');
+
+      await bet(predictionContract, alice, '100', 'down', assetInfo);
+      await bet(predictionContract, bob, '1000', 'up', assetInfo);
+      await bet(predictionContract, carol, '400', 'down', assetInfo);
+
+      await sleepUntil(genesisRound.end_time);
+
+      let closePrice = '5';
+      await oracleContract.tx.feed_price({ account: owner }, [
+        [assetInfo, closePrice],
+      ]);
+
+      await predictionContract.tx.execute_round({
+        account: operator,
+      });
+
+      let currentRound = await predictionContract.query.round('2');
+
+      await sleepUntil(currentRound.end_time);
+
+      closePrice = '3';
+      await oracleContract.tx.feed_price({ account: owner }, [
+        [assetInfo, closePrice],
+      ]);
+
+      await predictionContract.tx.execute_round({
+        account: operator,
+      });
+
+      let claim_before_bal = await getScrtBalanceWithCustomClient(
+        signingClient,
+        treasury,
+      );
+
+      let ex_response = await predictionContract.tx.withdraw({
+        account: owner,
+      });
+
+      expect(
+        (
+          await getScrtBalanceWithCustomClient(signingClient, treasury)
+        ).toString(),
+      ).to.be.equal(claim_before_bal.add(new BN(45)).toString());
+
+      await expect(predictionContract.query.state()).to.respondWith({
+        epoch: '4',
+        total_fee: '0',
+        paused: false,
+      });
+
+      checkLogs(ex_response, {
+        action: 'withdraw',
+        amount: '45',
       });
     });
   });

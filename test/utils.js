@@ -1,4 +1,5 @@
 const { expect } = require('chai');
+const BN = require('bn.js');
 
 const checkLogs = (response, logs) => {
   const event = response.logs[0].events.find((item) => item.type === 'wasm');
@@ -44,9 +45,23 @@ const getScrtBalance = async (account) => {
   const balances = await account.getBalance();
   const coin = balances.find((item) => item.denom === 'uscrt');
   if (coin) {
-    return Number(coin.amount);
+    return new BN(coin.amount);
   }
-  return 0;
+  return new BN(0);
+};
+
+const getScrtBalanceWithCustomClient = async (client, account) => {
+  const info = await client.getAccount(account.account.address);
+  console.log(info);
+  if (info === undefined || info.balance === undefined) {
+    return new BN(0);
+  }
+
+  const coin = info.balance.find((item) => item.denom === 'uscrt');
+  if (coin) {
+    return new BN(coin.amount);
+  }
+  return new BN(0);
 };
 
 module.exports = {
@@ -55,4 +70,5 @@ module.exports = {
   sleep,
   sleepUntil,
   getScrtBalance,
+  getScrtBalanceWithCustomClient,
 };

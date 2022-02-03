@@ -78,12 +78,16 @@ impl Round {
                 Uint128::zero()
             };
 
-            return self.reward_amount * Decimal::from_ratio(user_bet.amount, win_bet_amount);
+            if win_bet_amount.is_zero() {
+                Uint128::zero()
+            } else {
+                self.reward_amount * Decimal::from_ratio(user_bet.amount, win_bet_amount)
+            }
+        } else if self.refundable(env, grace_interval) {
+            user_bet.amount
+        } else {
+            Uint128::zero()
         }
-        if self.refundable(env, grace_interval) {
-            return user_bet.amount;
-        }
-        Uint128::zero()
     }
 
     pub fn executable(&self, env: Env) -> bool {
