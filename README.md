@@ -24,7 +24,9 @@ docker run -it --rm \
  --name secretdev enigmampc/secret-network-sw-dev
 ```
 
-3. Update `accounts/local.json` file with the seed accounts of local node.
+3. Update `accounts/local.js` file with the seed accounts of local node.
+
+4. Create `.env` file and add `TESTNET_ADDRESS`, `TESTNET_MENMONIC`, `MAINNET_ADDRESS`, `MAINNET_MNEMONIC`. These are required to deploy contracts on testnet and mainnet.
 
 ### How to compile
 
@@ -36,14 +38,14 @@ docker run -it --rm \
 
 ### How to deploy oracle
 
-1. Update `accounts/testnet.json` or `accounts/mainnet.json` with mnemonic.
+1. Complete `.env` file.
 2. `scripts/deployOracle.js` will deploy oracle contract, and register SCRT native token and set owner address as a feeder. So before run this, please update asset info, and feeder address.
 3. Run the following commands
    ```polar run scripts/deployOracle.js --network testnet`
 
 ### How to deploy prediction
 
-1. Update `accounts/testnet.json` or `accounts/mainnet.json` with mnemonic.
+1. Complete `.env` file.
 2. Update config in `scripts/deployPrediction.js`.
 3. Run the following commands
    ```polar run scripts/deployPrediction.js --network testnet`

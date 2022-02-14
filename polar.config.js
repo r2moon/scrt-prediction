@@ -1,6 +1,4 @@
-const localAccounts = require('./accounts/local.json');
-const testnetAccounts = require('./accounts/testnet.json');
-const mainnetAccounts = require('./accounts/mainnet.json');
+const getAccounts = require('./accounts/getAccounts');
 
 module.exports = {
   defaultNetwork: 'development',
@@ -11,7 +9,7 @@ module.exports = {
       chainId: 'secretdev-1',
       trustNode: true,
       keyringBackend: 'test',
-      accounts: localAccounts,
+      accounts: getAccounts('local'),
       types: {},
     },
     testnet: {
@@ -19,7 +17,24 @@ module.exports = {
       chainId: 'pulsar-2',
       trustNode: true,
       keyringBackend: 'test',
-      accounts: testnetAccounts,
+      accounts: getAccounts('testnet'),
+      types: {},
+      fees: {
+        upload: {
+          amount: [{ amount: '500000', denom: 'uscrt' }],
+          gas: '2000000',
+        },
+        init: {
+          amount: [{ amount: '125000', denom: 'uscrt' }],
+          gas: '500000',
+        },
+      },
+    },
+    mainnet: {
+      endpoint: 'mainnet rpc',
+      chainId: 'mainnet chain id',
+      trustNode: true,
+      accounts: getAccounts('mainnet'),
       types: {},
       fees: {
         upload: {
