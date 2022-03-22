@@ -57,11 +57,15 @@
           "type": "object",
           "required": [
             "epoch",
+            "key",
             "user"
           ],
           "properties": {
             "epoch": {
               "$ref": "#/definitions/Uint128"
+            },
+            "key": {
+              "type": "string"
             },
             "user": {
               "$ref": "#/definitions/HumanAddr"

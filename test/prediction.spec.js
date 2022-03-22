@@ -37,6 +37,9 @@ describe('prediction', () => {
   };
   const txFee = new BN(50000);
   let signingClient;
+  let aliceViewingKey = 'aliceViewingKey';
+  let bobViewingKey = 'bobViewingKey';
+  let carolViewingKey = 'carolViewingKey';
 
   before(async () => {
     owner = getAccountByName('account_0');
@@ -102,6 +105,7 @@ describe('prediction', () => {
         fee_rate: feeRate.toString(),
         interval,
         grace_interval: graceInterval,
+        prng_seed: 'eyJkZXBvc2l0Ijp7fX0K',
       },
       'init test',
       owner,
@@ -364,6 +368,13 @@ describe('prediction', () => {
       await predictionContract.tx.start_genesis_round({
         account: owner,
       });
+      await predictionContract.tx.set_viewing_key(
+        {
+          account: alice,
+        },
+        aliceViewingKey,
+        null,
+      );
     });
 
     it('fail if amount is zero', async () => {
@@ -400,6 +411,32 @@ describe('prediction', () => {
       ).to.be.revertedWith('Paused');
     });
 
+    it('fails to query bet with invalid viewing key', async () => {
+      const amount = '1000';
+      await predictionContract.tx.bet(
+        {
+          account: alice,
+          transferAmount: [
+            {
+              amount,
+              denom: 'uscrt',
+            },
+          ],
+        },
+        'up',
+      );
+
+      const invalidViewingKey = 'invalidViewingKey';
+
+      await expect(
+        predictionContract.query.bet(
+          '2',
+          invalidViewingKey,
+          alice.account.address,
+        ),
+      ).to.be.revertedWith('Invalid viewing key');
+    });
+
     it('bet up with native token', async () => {
       const amount = '1000';
       const ex_response = await predictionContract.tx.bet(
@@ -422,7 +459,11 @@ describe('prediction', () => {
       });
 
       await expect(
-        predictionContract.query.bet('2', alice.account.address),
+        predictionContract.query.bet(
+          '2',
+          aliceViewingKey,
+          alice.account.address,
+        ),
       ).to.respondWith({
         amount,
         position: 'up',
@@ -459,7 +500,11 @@ describe('prediction', () => {
       );
 
       await expect(
-        predictionContract.query.bet('2', alice.account.address),
+        predictionContract.query.bet(
+          '2',
+          aliceViewingKey,
+          alice.account.address,
+        ),
       ).to.respondWith({
         amount,
         position: 'down',
@@ -556,6 +601,13 @@ describe('prediction', () => {
       await predictionContract.tx.start_genesis_round({
         account: owner,
       });
+      await predictionContract.tx.set_viewing_key(
+        {
+          account: alice,
+        },
+        aliceViewingKey,
+        null,
+      );
     });
 
     it('fail if msg.sender is not operator', async () => {
@@ -1053,6 +1105,13 @@ describe('prediction', () => {
       await predictionContract.tx.start_genesis_round({
         account: owner,
       });
+      await predictionContract.tx.set_viewing_key(
+        {
+          account: alice,
+        },
+        aliceViewingKey,
+        null,
+      );
     });
 
     it('fail if round is not ended', async () => {
@@ -1197,7 +1256,11 @@ describe('prediction', () => {
       );
 
       await expect(
-        predictionContract.query.bet('2', alice.account.address),
+        predictionContract.query.bet(
+          '2',
+          aliceViewingKey,
+          alice.account.address,
+        ),
       ).to.respondWith({
         amount: '100',
         position: 'down',
@@ -1295,7 +1358,11 @@ describe('prediction', () => {
       );
 
       await expect(
-        predictionContract.query.bet('2', alice.account.address),
+        predictionContract.query.bet(
+          '2',
+          aliceViewingKey,
+          alice.account.address,
+        ),
       ).to.respondWith({
         amount: '100',
         position: 'down',
@@ -1354,7 +1421,11 @@ describe('prediction', () => {
       );
 
       await expect(
-        predictionContract.query.bet('2', alice.account.address),
+        predictionContract.query.bet(
+          '2',
+          aliceViewingKey,
+          alice.account.address,
+        ),
       ).to.respondWith({
         amount: '100',
         position: 'down',
@@ -1390,7 +1461,11 @@ describe('prediction', () => {
       );
 
       await expect(
-        predictionContract.query.bet('2', alice.account.address),
+        predictionContract.query.bet(
+          '2',
+          aliceViewingKey,
+          alice.account.address,
+        ),
       ).to.respondWith({
         amount: '100',
         position: 'down',
