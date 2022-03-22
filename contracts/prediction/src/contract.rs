@@ -3,13 +3,14 @@ use cosmwasm_std::{
     InitResponse, Querier, StdError, StdResult, Storage, Uint128,
 };
 
-use crate::handler::{bet, claim};
+use crate::handler::{bet, claim, create_viewing_key, set_viewing_key};
 use crate::manage::{execute_round, pause, start_genesis_round, update_config, withdraw};
 use crate::query::{query_bet, query_config, query_round, query_state};
 use crate::state::{read_config, store_config, store_state, Config};
 use prediction::{
     asset::AssetInfoRaw,
     prediction::{Cw20HookMsg, HandleMsg, InitMsg, Position, QueryMsg, State},
+    rand::sha_256,
 };
 
 pub fn init<S: Storage, A: Api, Q: Querier>(
@@ -25,6 +26,8 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
         return Err(StdError::generic_err("Invalid grace interval"));
     }
 
+    let prng_seed_hashed = sha_256(&msg.prng_seed.0);
+
     let config = Config {
         owner_addr: deps.api.canonical_address(&env.message.sender)?,
         operator_addr: deps.api.canonical_address(&msg.operator_addr)?,
@@ -35,6 +38,7 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
         fee_rate: msg.fee_rate,
         interval: msg.interval,
         grace_interval: msg.grace_interval,
+        prng_seed: prng_seed_hashed.to_vec(),
     };
 
     store_config(&mut deps.storage, &config)?;
@@ -85,6 +89,8 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
         HandleMsg::ExecuteRound {} => execute_round(deps, env),
         HandleMsg::Pause {} => pause(deps, env),
         HandleMsg::StartGenesisRound {} => start_genesis_round(deps, env),
+        HandleMsg::CreateViewingKey { entropy, .. } => create_viewing_key(deps, env, entropy),
+        HandleMsg::SetViewingKey { key, .. } => set_viewing_key(deps, env, key),
     }
 }
 

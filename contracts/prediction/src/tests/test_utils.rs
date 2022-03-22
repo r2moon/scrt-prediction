@@ -1,5 +1,5 @@
 use cosmwasm_std::testing::{mock_env, MockApi, MockQuerier, MockStorage};
-use cosmwasm_std::{Decimal, Extern, HumanAddr};
+use cosmwasm_std::{Binary, Decimal, Extern, HumanAddr};
 
 use prediction::{
     asset::AssetInfo,
@@ -20,6 +20,7 @@ pub fn init_prediction(deps: &mut Extern<MockStorage, MockApi, MockQuerier>) {
         fee_rate: Decimal::percent(5),
         interval: 18000,
         grace_interval: 18000,
+        prng_seed: Binary::from("lolz fun yay".as_bytes()),
     };
 
     let env = mock_env("owner_addr", &[]);

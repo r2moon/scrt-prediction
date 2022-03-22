@@ -1,15 +1,15 @@
 const accounts = [
   {
     name: 'account_0',
-    address: 'secret1m9d7xnf2kklapcv48d8u5x4v5sux2d4trus6sh',
+    address: 'secret1aftszjm7desyvsgjjjkp8kjmfm8q3tceflltt2',
     mnemonic:
-      'minute grid wire huge ten code tattoo deny fine relief try home cannon believe valid unfold remove wedding urban behind almost cigar match page',
+      'math spell lamp install flee crash art winner between subway scatter output among girl scare slender defy cup minute combine half mind outdoor green',
   },
   {
     name: 'account_1',
-    address: 'secret1vyudggyr5gr5he80jff6ha35anpxmwxnkag38j',
+    address: 'secret166wmexxjl5v2360g7sfqh45fav27dwnug03vf8',
     mnemonic:
-      'lawsuit symptom song usage deal rack because small ask brisk art visual mad donkey clay excuse jeans quote cherry shallow weird cup appear people',
+      'resist series ecology repeat exhaust winner insane salmon advice today trick hedgehog choose reduce hawk empower shy moment amateur aunt dash inherit noble festival',
   },
 ];
 

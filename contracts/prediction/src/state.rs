@@ -6,11 +6,13 @@ use serde::{Deserialize, Serialize};
 use prediction::{
     asset::AssetInfoRaw,
     prediction::{Position, State},
+    viewing_key::ViewingKey,
 };
 
 static KEY_CONFIG: &[u8] = b"config";
 static KEY_STATE: &[u8] = b"state";
 static PREFIX_ROUND: &[u8] = b"round";
+pub const PREFIX_VIEW_KEY: &[u8] = b"viewingkey";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
@@ -23,6 +25,7 @@ pub struct Config {
     pub fee_rate: Decimal,
     pub interval: u64,
     pub grace_interval: u64,
+    pub prng_seed: Vec<u8>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -154,4 +157,16 @@ pub fn store_bet<S: Storage>(
 pub fn read_bet<S: Storage>(storage: &S, epoch: Uint128, user: CanonicalAddr) -> StdResult<Bet> {
     ReadonlyBucket::new(PREFIX_ROUND, storage)
         .load(&[user.as_slice(), &epoch.u128().to_be_bytes()].concat())
+}
+
+pub fn store_viewing_key<S: Storage>(
+    storage: &mut S,
+    user: &CanonicalAddr,
+    key: &ViewingKey,
+) -> StdResult<()> {
+    Bucket::new(PREFIX_VIEW_KEY, storage).save(&user.as_slice(), key)
+}
+
+pub fn read_viewing_key<S: Storage>(storage: &S, user: &CanonicalAddr) -> StdResult<ViewingKey> {
+    ReadonlyBucket::new(PREFIX_VIEW_KEY, storage).load(&user.as_slice())
 }

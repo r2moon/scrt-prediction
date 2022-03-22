@@ -4,11 +4,13 @@ use cosmwasm_std::{
 };
 
 use crate::state::{
-    read_bet, read_config, read_round, read_state, store_bet, store_round, Bet, Config, Round,
+    read_bet, read_config, read_round, read_state, store_bet, store_round, store_viewing_key, Bet,
+    Config, Round,
 };
 use prediction::{
     asset::Asset,
     prediction::{Position, State},
+    viewing_key::ViewingKey,
 };
 
 pub fn bet<S: Storage, A: Api, Q: Querier>(
@@ -123,6 +125,45 @@ pub fn claim<S: Storage, A: Api, Q: Querier>(
             log("amount", user_bet.amount),
             log("claim_amount", claim_amount),
         ],
+        data: None,
+    })
+}
+
+pub fn create_viewing_key<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
+    entropy: String,
+) -> HandleResult {
+    let config = read_config(&deps.storage)?;
+    let prng_seed = config.prng_seed;
+
+    let key = ViewingKey::new(&env, &prng_seed, (&entropy).as_ref());
+
+    let message_sender = deps.api.canonical_address(&env.message.sender)?;
+
+    store_viewing_key(&mut deps.storage, &message_sender, &key)?;
+
+    Ok(HandleResponse {
+        messages: vec![],
+        log: vec![log("action", "create_viewing_key"), log("key", key)],
+        data: None,
+    })
+}
+
+pub fn set_viewing_key<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
+    key: String,
+) -> HandleResult {
+    let vk = ViewingKey(key);
+
+    let message_sender = deps.api.canonical_address(&env.message.sender)?;
+
+    store_viewing_key(&mut deps.storage, &message_sender, &vk)?;
+
+    Ok(HandleResponse {
+        messages: vec![],
+        log: vec![log("action", "set_viewing_key"), log("success", true)],
         data: None,
     })
 }

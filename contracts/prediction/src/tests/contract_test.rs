@@ -1,5 +1,5 @@
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
-use cosmwasm_std::{from_binary, log, Decimal, HumanAddr, StdError, Uint128};
+use cosmwasm_std::{from_binary, log, Binary, Decimal, HumanAddr, StdError, Uint128};
 
 use prediction::{
     asset::AssetInfo,
@@ -27,6 +27,7 @@ fn test_init_failed_if_fee_rate_is_greater_than_100() {
         fee_rate: Decimal::percent(101),
         interval: 18000,
         grace_interval: 18000,
+        prng_seed: Binary::from("lolz fun yay".as_bytes()),
     };
 
     let env = mock_env("addr", &[]);
@@ -50,6 +51,7 @@ fn test_init_failed_if_grace_interval_is_greater_than_interval() {
         fee_rate: Decimal::percent(3),
         interval: 18000,
         grace_interval: 18001,
+        prng_seed: Binary::from("lolz fun yay".as_bytes()),
     };
 
     let env = mock_env("addr", &[]);
@@ -73,6 +75,7 @@ fn test_init() {
         fee_rate: Decimal::percent(5),
         interval: 18000,
         grace_interval: 18000,
+        prng_seed: Binary::from("lolz fun yay".as_bytes()),
     };
 
     let env = mock_env("addr", &[]);

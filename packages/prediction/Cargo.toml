@@ -25,3 +25,8 @@ cosmwasm-std = { git = "https://github.com/enigmampc/SecretNetwork", tag = "v1.0
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 schemars = "0.7"
 secret-toolkit = { git = "https://github.com/enigmampc/secret-toolkit", branch = "debug-print" }
+rand_chacha = { version = "0.2.2", default-features = false }
+rand_core = { version = "0.5.1", default-features = false }
+sha2 = { version = "0.9.1", default-features = false }
+subtle = { version = "2.2.3", default-features = false }
+base64 = "0.12.3"

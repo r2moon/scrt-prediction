@@ -41,11 +41,11 @@ docker run -it --rm \
 1. Complete `.env` file.
 2. `scripts/deployOracle.js` will deploy oracle contract, and register SCRT native token and set owner address as a feeder. So before run this, please update asset info, and feeder address.
 3. Run the following commands
-   ```polar run scripts/deployOracle.js --network testnet`
+   `polar run scripts/deployOracle.js --network testnet`
 
 ### How to deploy prediction
 
 1. Complete `.env` file.
 2. Update config in `scripts/deployPrediction.js`.
 3. Run the following commands
-   ```polar run scripts/deployPrediction.js --network testnet`
+   `polar run scripts/deployPrediction.js --network testnet`

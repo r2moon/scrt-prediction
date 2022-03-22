@@ -22,6 +22,8 @@ pub struct InitMsg {
     pub interval: u64,
     /// Grace interval to execute round
     pub grace_interval: u64,
+    /// PRNG seed
+    pub prng_seed: Binary,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -55,6 +57,16 @@ pub enum HandleMsg {
     Pause {},
     /// Start genesis round
     StartGenesisRound {},
+    /// Create viewing key
+    CreateViewingKey {
+        entropy: String,
+        padding: Option<String>,
+    },
+    /// Set viewing key
+    SetViewingKey {
+        key: String,
+        padding: Option<String>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
