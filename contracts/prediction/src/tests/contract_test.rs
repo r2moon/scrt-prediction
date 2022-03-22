@@ -1,14 +1,16 @@
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
-use cosmwasm_std::{from_binary, log, Binary, Decimal, HumanAddr, StdError, Uint128};
+use cosmwasm_std::{from_binary, log, Api, Binary, Decimal, HumanAddr, StdError, Uint128};
 
 use prediction::{
     asset::AssetInfo,
     prediction::{ConfigResponse, HandleMsg, InitMsg, QueryMsg, State},
+    rand::sha_256,
+    viewing_key::{ViewingKey, VIEWING_KEY_SIZE},
 };
 
 use crate::{
     contract::{handle, init, query},
-    state::Round,
+    state::{read_config, read_viewing_key, Round},
     tests::test_utils::{init_prediction, start_genesis_round},
 };
 
@@ -110,6 +112,12 @@ fn test_init() {
             paused: true,
         },
         state
+    );
+
+    let config = read_config(&deps.storage).unwrap();
+    assert_eq!(
+        config.prng_seed,
+        sha_256("lolz fun yay".to_owned().as_bytes())
     );
 }
 
@@ -383,4 +391,66 @@ fn test_pause() {
         },
         state
     );
+}
+
+#[test]
+fn test_create_viewing_key() {
+    let mut deps = mock_dependencies(20, &[]);
+
+    init_prediction(&mut deps);
+
+    let msg = HandleMsg::CreateViewingKey {
+        entropy: "".to_string(),
+        padding: None,
+    };
+
+    let env = mock_env("user", &[]);
+
+    let res = handle(&mut deps, env.clone(), msg).unwrap();
+
+    let key = read_viewing_key(
+        &deps.storage,
+        &deps
+            .api
+            .canonical_address(&HumanAddr("user".to_string()))
+            .unwrap(),
+    )
+    .unwrap();
+
+    assert_eq!(
+        res.log,
+        vec![log("action", "create_viewing_key"), log("key", key),]
+    );
+}
+
+#[test]
+fn test_set_viewing_key() {
+    let mut deps = mock_dependencies(20, &[]);
+
+    init_prediction(&mut deps);
+
+    let actual_vk = ViewingKey("x".to_string().repeat(VIEWING_KEY_SIZE));
+    let msg = HandleMsg::SetViewingKey {
+        key: actual_vk.0.clone(),
+        padding: None,
+    };
+
+    let env = mock_env("user", &[]);
+
+    let res = handle(&mut deps, env.clone(), msg).unwrap();
+
+    let key = read_viewing_key(
+        &deps.storage,
+        &deps
+            .api
+            .canonical_address(&HumanAddr("user".to_string()))
+            .unwrap(),
+    )
+    .unwrap();
+
+    assert_eq!(
+        res.log,
+        vec![log("action", "set_viewing_key"), log("success", true),]
+    );
+    assert!(actual_vk.check_viewing_key(&key.to_hashed()));
 }
