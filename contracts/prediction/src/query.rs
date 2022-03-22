@@ -1,12 +1,15 @@
 use cosmwasm_std::{
-    to_binary, Api, Extern, HumanAddr, Querier, QueryRequest, StdResult, Storage, Uint128,
-    WasmQuery,
+    to_binary, Api, Extern, HumanAddr, Querier, QueryRequest, StdError, StdResult, Storage,
+    Uint128, WasmQuery,
 };
 
-use crate::state::{read_bet, read_config, read_round, read_state, Bet, Config, Round};
+use crate::state::{
+    read_bet, read_config, read_round, read_state, read_viewing_key, Bet, Config, Round,
+};
 use prediction::{
     oracle::{PriceInfo, QueryMsg as OracleQueryMsg},
     prediction::{ConfigResponse, State},
+    viewing_key::ViewingKey,
 };
 
 pub fn query_config<S: Storage, A: Api, Q: Querier>(
@@ -45,9 +48,15 @@ pub fn query_bet<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
     epoch: Uint128,
     user: HumanAddr,
+    key: String,
 ) -> StdResult<Bet> {
-    let bet: Bet = read_bet(&deps.storage, epoch, deps.api.canonical_address(&user)?)?;
-    Ok(bet)
+    let is_valid = validate_viewing_key(deps, user.clone(), key)?;
+    if is_valid {
+        let bet: Bet = read_bet(&deps.storage, epoch, deps.api.canonical_address(&user)?)?;
+        Ok(bet)
+    } else {
+        Err(StdError::generic_err("Invalid viewing key"))
+    }
 }
 
 pub fn query_price<S: Storage, A: Api, Q: Querier>(
@@ -63,4 +72,16 @@ pub fn query_price<S: Storage, A: Api, Q: Querier>(
     }))?;
 
     Ok(price_data)
+}
+
+fn validate_viewing_key<S: Storage, A: Api, Q: Querier>(
+    deps: &Extern<S, A, Q>,
+    user: HumanAddr,
+    key: String,
+) -> StdResult<bool> {
+    let vk = ViewingKey(key);
+    let canonical_addr = deps.api.canonical_address(&user)?;
+    let expected_key = read_viewing_key(&deps.storage, &canonical_addr)?;
+
+    Ok(vk.check_viewing_key(&expected_key.to_hashed()))
 }

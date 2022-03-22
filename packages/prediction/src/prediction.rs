@@ -85,7 +85,11 @@ pub enum QueryMsg {
     /// Query round by epoch
     Round { epoch: Uint128 },
     /// Query bet by user and epoch
-    Bet { epoch: Uint128, user: HumanAddr },
+    Bet {
+        epoch: Uint128,
+        user: HumanAddr,
+        key: String,
+    },
 }
 
 // We define a custom struct for each query response

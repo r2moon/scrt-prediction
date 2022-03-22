@@ -153,6 +153,6 @@ pub fn query<S: Storage, A: Api, Q: Querier>(
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::Round { epoch } => to_binary(&query_round(deps, epoch)?),
-        QueryMsg::Bet { epoch, user } => to_binary(&query_bet(deps, epoch, user)?),
+        QueryMsg::Bet { epoch, user, key } => to_binary(&query_bet(deps, epoch, user, key)?),
     }
 }
