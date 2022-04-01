@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::asset::AssetInfo;
 use cosmwasm_std::{Binary, Decimal, HumanAddr, Uint128};
+use secret_toolkit::permit::Permit;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InitMsg {
@@ -90,6 +91,17 @@ pub enum QueryMsg {
         user: HumanAddr,
         key: String,
     },
+    /// Query with permit
+    WithPermit {
+        permit: Permit,
+        query: QueryWithPermit,
+    },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum QueryWithPermit {
+    Bet { epoch: Uint128 },
 }
 
 // We define a custom struct for each query response

@@ -1,16 +1,18 @@
 use cosmwasm_std::{
-    to_binary, Api, Extern, HumanAddr, Querier, QueryRequest, StdError, StdResult, Storage,
+    to_binary, Api, Binary, Extern, HumanAddr, Querier, QueryRequest, StdError, StdResult, Storage,
     Uint128, WasmQuery,
 };
 
 use crate::state::{
     read_bet, read_config, read_round, read_state, read_viewing_key, Bet, Config, Round,
+    PREFIX_REVOKED_PERMITS,
 };
 use prediction::{
     oracle::{PriceInfo, QueryMsg as OracleQueryMsg},
-    prediction::{ConfigResponse, State},
+    prediction::{ConfigResponse, QueryWithPermit, State},
     viewing_key::ViewingKey,
 };
+use secret_toolkit::permit::{validate, Permission, Permit};
 
 pub fn query_config<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
@@ -52,11 +54,19 @@ pub fn query_bet<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<Bet> {
     let is_valid = validate_viewing_key(deps, user.clone(), key)?;
     if is_valid {
-        let bet: Bet = read_bet(&deps.storage, epoch, deps.api.canonical_address(&user)?)?;
-        Ok(bet)
+        query_bet_raw(deps, epoch, user)
     } else {
         Err(StdError::generic_err("Invalid viewing key"))
     }
+}
+
+pub fn query_bet_raw<S: Storage, A: Api, Q: Querier>(
+    deps: &Extern<S, A, Q>,
+    epoch: Uint128,
+    user: HumanAddr,
+) -> StdResult<Bet> {
+    let bet: Bet = read_bet(&deps.storage, epoch, deps.api.canonical_address(&user)?)?;
+    Ok(bet)
 }
 
 pub fn query_price<S: Storage, A: Api, Q: Querier>(
@@ -84,4 +94,30 @@ fn validate_viewing_key<S: Storage, A: Api, Q: Querier>(
     let expected_key = read_viewing_key(&deps.storage, &canonical_addr)?;
 
     Ok(vk.check_viewing_key(&expected_key.to_hashed()))
+}
+
+pub fn permit_queries<S: Storage, A: Api, Q: Querier>(
+    deps: &Extern<S, A, Q>,
+    permit: Permit,
+    query: QueryWithPermit,
+) -> Result<Binary, StdError> {
+    // Validate permit content
+    let config = read_config(&deps.storage)?;
+    let contract_addr = deps.api.human_address(&config.contract_addr)?;
+
+    let account = validate(deps, PREFIX_REVOKED_PERMITS, &permit, contract_addr)?;
+
+    // Permit validated! We can now execute the query.
+    match query {
+        QueryWithPermit::Bet { epoch } => {
+            if !permit.check_permission(&Permission::Owner) {
+                return Err(StdError::generic_err(format!(
+                    "No permission to query balance, got permissions {:?}",
+                    permit.params.permissions
+                )));
+            }
+
+            to_binary(&query_bet_raw(deps, epoch, account)?)
+        }
+    }
 }

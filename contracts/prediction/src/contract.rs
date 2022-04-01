@@ -5,7 +5,7 @@ use cosmwasm_std::{
 
 use crate::handler::{bet, claim, create_viewing_key, set_viewing_key};
 use crate::manage::{execute_round, pause, start_genesis_round, update_config, withdraw};
-use crate::query::{query_bet, query_config, query_round, query_state};
+use crate::query::{permit_queries, query_bet, query_config, query_round, query_state};
 use crate::state::{read_config, store_config, store_state, Config};
 use prediction::{
     asset::AssetInfoRaw,
@@ -29,6 +29,7 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
     let prng_seed_hashed = sha_256(&msg.prng_seed.0);
 
     let config = Config {
+        contract_addr: deps.api.canonical_address(&env.contract.address)?,
         owner_addr: deps.api.canonical_address(&env.message.sender)?,
         operator_addr: deps.api.canonical_address(&msg.operator_addr)?,
         treasury_addr: deps.api.canonical_address(&msg.treasury_addr)?,
@@ -154,5 +155,6 @@ pub fn query<S: Storage, A: Api, Q: Querier>(
         QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::Round { epoch } => to_binary(&query_round(deps, epoch)?),
         QueryMsg::Bet { epoch, user, key } => to_binary(&query_bet(deps, epoch, user, key)?),
+        QueryMsg::WithPermit { permit, query } => permit_queries(deps, permit, query),
     }
 }

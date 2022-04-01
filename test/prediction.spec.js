@@ -11,6 +11,7 @@ const {
   EnigmaUtils,
   SigningCosmWasmClient,
   Secp256k1Pen,
+  Wallet,
 } = require('secretjs');
 const {
   checkLogs,
@@ -23,7 +24,7 @@ const {
 
 use(polarChai);
 
-describe('prediction', () => {
+describe.only('prediction', () => {
   let owner, alice, bob, carol, operator, treasury;
   let oracleContract;
   let predictionContract;
@@ -38,8 +39,6 @@ describe('prediction', () => {
   const txFee = new BN(50000);
   let signingClient;
   let aliceViewingKey = 'aliceViewingKey';
-  let bobViewingKey = 'bobViewingKey';
-  let carolViewingKey = 'carolViewingKey';
 
   before(async () => {
     owner = getAccountByName('account_0');
@@ -47,31 +46,36 @@ describe('prediction', () => {
 
     oracleContract = new Contract('oracle');
     await oracleContract.parseSchema();
-    await oracleContract.deploy(owner);
+
+    await oracleContract.deploy(owner, {
+      // custom fees
+      amount: [{ amount: '750000', denom: 'uscrt' }],
+      gas: '3000000',
+    });
 
     [bob, carol, operator, treasury] = (await createAccounts(5)).map(
       (account) => new UserAccountI(account, oracleContract.env),
     );
 
-    const signingPen = await Secp256k1Pen.fromMnemonic(owner.account.mnemonic);
-    signingClient = new SigningCosmWasmClient(
-      network.config.endpoint,
-      owner.account.address,
-      (signBytes) => signingPen.sign(signBytes),
-      network.config.seed ?? EnigmaUtils.GenerateNewSeed(),
-      network.config.fees,
-      network.config.broadCastMode,
-    );
+    // const signingPen = await Secp256k1Pen.fromMnemonic(owner.account.mnemonic);
+    // signingClient = new SigningCosmWasmClient(
+    //   network.config.endpoint,
+    //   owner.account.address,
+    //   (signBytes) => signingPen.sign(signBytes),
+    //   network.config.seed ?? EnigmaUtils.GenerateNewSeed(),
+    //   network.config.fees,
+    //   network.config.broadCastMode,
+    // );
 
-    await signingClient.sendTokens(bob.account.address, [
-      { amount: '100000000', denom: 'uscrt' },
-    ]);
-    await signingClient.sendTokens(carol.account.address, [
-      { amount: '100000000', denom: 'uscrt' },
-    ]);
-    await signingClient.sendTokens(operator.account.address, [
-      { amount: '100000000', denom: 'uscrt' },
-    ]);
+    // await signingClient.sendTokens(bob.account.address, [
+    //   { amount: '100000000', denom: 'uscrt' },
+    // ]);
+    // await signingClient.sendTokens(carol.account.address, [
+    //   { amount: '100000000', denom: 'uscrt' },
+    // ]);
+    // await signingClient.sendTokens(operator.account.address, [
+    //   { amount: '100000000', denom: 'uscrt' },
+    // ]);
 
     await oracleContract.instantiate(
       { owner: owner.account.address },
@@ -1605,6 +1609,98 @@ describe('prediction', () => {
         action: 'withdraw',
         amount: '45',
       });
+    });
+  });
+
+  describe.only('permit query', () => {
+    const PERMIT_NAME = 'scrt_prediction';
+    const allowedTokens = ['secret18vd8fpwxzck93qlwghaj6arh4p7c5n8978vsyg'];
+    const PERMISSIONS = ['owner'];
+    const CHAIN_ID = 'secretdev-1';
+    const amount = '1000';
+
+    beforeEach(async () => {
+      await oracleContract.tx.feed_price({ account: owner }, [
+        [assetInfo, '3'],
+      ]);
+      await predictionContract.tx.start_genesis_round({
+        account: owner,
+      });
+      await predictionContract.tx.set_viewing_key(
+        {
+          account: alice,
+        },
+        aliceViewingKey,
+        null,
+      );
+      await predictionContract.tx.bet(
+        {
+          account: alice,
+          transferAmount: [
+            {
+              amount,
+              denom: 'uscrt',
+            },
+          ],
+        },
+        'up',
+      );
+    });
+
+    it('query permit', async () => {
+      const wallet = new Wallet(alice.account.mnemonic);
+
+      const { signature } = await wallet.signAmino(alice.account.address, {
+        chain_id: CHAIN_ID,
+        account_number: '0',
+        sequence: '0',
+        fee: {
+          amount: [{ denom: 'uscrt', amount: '0' }], // Must be 0 uscrt
+          gas: '1', // Must be 1
+        },
+        msgs: [
+          {
+            type: 'query_permit', // Must be "query_permit"
+            value: {
+              permit_name: PERMIT_NAME,
+              allowed_tokens: [predictionContract.contractAddress],
+              permissions: PERMISSIONS,
+            },
+          },
+        ],
+        memo: '',
+      });
+
+      console.log(signature);
+
+      await expect(
+        predictionContract.query.bet(
+          '2',
+          aliceViewingKey,
+          alice.account.address,
+        ),
+      ).to.respondWith({
+        amount,
+        position: 'up',
+        claimed: false,
+      });
+
+      console.log('#$#');
+
+      const genesisRound = await predictionContract.query.with_permit(
+        {
+          params: {
+            permit_name: PERMIT_NAME,
+            allowed_tokens: allowedTokens,
+            chain_id: CHAIN_ID,
+            permissions: PERMISSIONS,
+          },
+          signature,
+        },
+        { bet: { epoch: '2' } },
+      );
+
+      console.log(genesisRound);
     });
   });
 });

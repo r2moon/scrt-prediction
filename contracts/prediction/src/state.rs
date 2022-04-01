@@ -12,10 +12,12 @@ use prediction::{
 static KEY_CONFIG: &[u8] = b"config";
 static KEY_STATE: &[u8] = b"state";
 static PREFIX_ROUND: &[u8] = b"round";
+pub const PREFIX_REVOKED_PERMITS: &str = "revoked_permits";
 pub const PREFIX_VIEW_KEY: &[u8] = b"viewingkey";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
+    pub contract_addr: CanonicalAddr,
     pub owner_addr: CanonicalAddr,
     pub operator_addr: CanonicalAddr,
     pub treasury_addr: CanonicalAddr,
@@ -102,16 +104,6 @@ impl Round {
     pub fn expired(&self, env: Env, grace_interval: u64) -> bool {
         env.block.time > self.end_time + grace_interval && self.close_price.is_none()
     }
-
-    // pub fn win_position(&self) -> Position {
-    //     if Some(self.open_price) > Some(self.close_price) {
-    //         Position::Down
-    //     } else if Some(self.open_price) > Some(self.close_price) {
-    //         Position::Up
-    //     } else {
-    //         Position::DRAW
-    //     }
-    // }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

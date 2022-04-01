@@ -1,15 +1,15 @@
 const accounts = [
   {
     name: 'account_0',
-    address: 'secret1aftszjm7desyvsgjjjkp8kjmfm8q3tceflltt2',
+    address: 'secret1k3ze0rthql5ewjqhqzx0aa8q77sgsygn3ugacn',
     mnemonic:
-      'math spell lamp install flee crash art winner between subway scatter output among girl scare slender defy cup minute combine half mind outdoor green',
+      'vibrant park twist scheme south paddle elder ridge raw feel typical skate manual acquire squirrel enjoy debris head spike gown sting earth unhappy deny',
   },
   {
     name: 'account_1',
-    address: 'secret166wmexxjl5v2360g7sfqh45fav27dwnug03vf8',
+    address: 'secret1u4jwjmjgh38unljpss8pr3e7dzfd2epmxpjude',
     mnemonic:
-      'resist series ecology repeat exhaust winner insane salmon advice today trick hedgehog choose reduce hawk empower shy moment amateur aunt dash inherit noble festival',
+      'conduct emerge clinic manage jewel when humble bracket egg until market human decide volume outdoor approve legend soup interest orphan chunk manage endorse film',
   },
 ];
 
