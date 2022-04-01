@@ -107,6 +107,7 @@ pub enum QueryWithPermit {
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
+    pub contract_addr: HumanAddr,
     pub owner_addr: HumanAddr,
     pub operator_addr: HumanAddr,
     pub treasury_addr: HumanAddr,

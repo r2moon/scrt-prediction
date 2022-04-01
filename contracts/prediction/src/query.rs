@@ -19,6 +19,7 @@ pub fn query_config<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<ConfigResponse> {
     let config: Config = read_config(&deps.storage)?;
     let resp = ConfigResponse {
+        contract_addr: deps.api.human_address(&config.contract_addr)?,
         owner_addr: deps.api.human_address(&config.owner_addr)?,
         operator_addr: deps.api.human_address(&config.operator_addr)?,
         treasury_addr: deps.api.human_address(&config.treasury_addr)?,

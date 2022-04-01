@@ -122,16 +122,6 @@ checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
 name = "cosmwasm-schema"
-version = "0.9.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b84abfcb5e4909c1f7cf0278a8b506644fa59452933e8c47c8787691afbb5374"
-dependencies = [
- "schemars",
- "serde_json",
-]
-
-[[package]]
-name = "cosmwasm-schema"
 version = "0.10.0"
 source = "git+https://github.com/enigmampc/SecretNetwork?tag=v1.0.4-debug-print#004c6bca6f2b7f31a6594abe4f44f2e41b1456b3"
 dependencies = [
@@ -309,7 +299,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 name = "oracle"
 version = "0.1.0"
 dependencies = [
- "cosmwasm-schema 0.10.0",
+ "cosmwasm-schema",
  "prediction",
  "schemars",
  "secret-cosmwasm-std",
@@ -342,7 +332,7 @@ dependencies = [
 name = "price-prediction"
 version = "0.1.0"
 dependencies = [
- "cosmwasm-schema 0.10.0",
+ "cosmwasm-schema",
  "prediction",
  "schemars",
  "secret-cosmwasm-std",
@@ -702,25 +692,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "snip20"
-version = "0.1.0"
-dependencies = [
- "base64 0.12.3",
- "bincode2",
- "cosmwasm-schema 0.9.4",
- "rand_chacha",
- "rand_core",
- "schemars",
- "secret-cosmwasm-std",
- "secret-cosmwasm-storage",
- "secret-toolkit",
- "serde",
- "sha2 0.9.9",
- "snafu",
- "subtle 2.4.1",
 ]
 
 [[package]]

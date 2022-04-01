@@ -7,12 +7,7 @@ const {
   createAccounts,
 } = require('secret-polar');
 const { UserAccountI } = require('secret-polar/dist/src/lib/account');
-const {
-  EnigmaUtils,
-  SigningCosmWasmClient,
-  Secp256k1Pen,
-  Wallet,
-} = require('secretjs');
+const { SecretNetworkClient, Wallet } = require('secretjs');
 const {
   checkLogs,
   bet,
@@ -20,6 +15,7 @@ const {
   sleepUntil,
   getScrtBalance,
   getScrtBalanceWithCustomClient,
+  sendDenom,
 } = require('./utils');
 
 use(polarChai);
@@ -37,8 +33,9 @@ describe.only('prediction', () => {
     },
   };
   const txFee = new BN(50000);
-  let signingClient;
+  let secretjs;
   let aliceViewingKey = 'aliceViewingKey';
+  const CHAIN_ID = 'secretdev-1';
 
   before(async () => {
     owner = getAccountByName('account_0');
@@ -57,25 +54,20 @@ describe.only('prediction', () => {
       (account) => new UserAccountI(account, oracleContract.env),
     );
 
-    // const signingPen = await Secp256k1Pen.fromMnemonic(owner.account.mnemonic);
-    // signingClient = new SigningCosmWasmClient(
-    //   network.config.endpoint,
-    //   owner.account.address,
-    //   (signBytes) => signingPen.sign(signBytes),
-    //   network.config.seed ?? EnigmaUtils.GenerateNewSeed(),
-    //   network.config.fees,
-    //   network.config.broadCastMode,
-    // );
+    const ownerWallet = new Wallet(owner.account.mnemonic);
+    secretjs = await SecretNetworkClient.create({
+      grpcWebUrl: 'http://localhost:9091',
+      chainId: CHAIN_ID,
+      wallet: ownerWallet,
+      walletAddress: owner.account.address,
+    });
 
-    // await signingClient.sendTokens(bob.account.address, [
-    //   { amount: '100000000', denom: 'uscrt' },
-    // ]);
-    // await signingClient.sendTokens(carol.account.address, [
-    //   { amount: '100000000', denom: 'uscrt' },
-    // ]);
-    // await signingClient.sendTokens(operator.account.address, [
-    //   { amount: '100000000', denom: 'uscrt' },
-    // ]);
+    await sendDenom(
+      secretjs,
+      owner.account.address,
+      [bob.account.address, carol.account.address, operator.account.address],
+      '100000000',
+    );
 
     await oracleContract.instantiate(
       { owner: owner.account.address },
@@ -129,6 +121,7 @@ describe.only('prediction', () => {
             fee_rate: '1.01',
             interval,
             grace_interval: graceInterval,
+            prng_seed: 'eyJkZXBvc2l0Ijp7fX0K',
           },
           'init test',
           owner,
@@ -148,6 +141,7 @@ describe.only('prediction', () => {
             fee_rate: feeRate.toString(),
             interval,
             grace_interval: interval + 1,
+            prng_seed: 'eyJkZXBvc2l0Ijp7fX0K',
           },
           'init test',
           owner,
@@ -166,12 +160,14 @@ describe.only('prediction', () => {
           fee_rate: feeRate.toString(),
           interval,
           grace_interval: graceInterval,
+          prng_seed: 'eyJkZXBvc2l0Ijp7fX0K',
         },
         'init test',
         owner,
       );
 
       await expect(predictionContract.query.config()).to.respondWith({
+        contract_addr: predictionContract.contractAddress,
         owner_addr: owner.account.address,
         operator_addr: operator.account.address,
         treasury_addr: treasury.account.address,
@@ -268,6 +264,7 @@ describe.only('prediction', () => {
       );
 
       await expect(predictionContract.query.config()).to.respondWith({
+        contract_addr: predictionContract.contractAddress,
         owner_addr: bob.account.address,
         operator_addr: carol.account.address,
         treasury_addr: owner.account.address,
@@ -1585,7 +1582,7 @@ describe.only('prediction', () => {
       });
 
       let claim_before_bal = await getScrtBalanceWithCustomClient(
-        signingClient,
+        secretjs,
         treasury,
       );
 
@@ -1594,9 +1591,7 @@ describe.only('prediction', () => {
       });
 
       expect(
-        (
-          await getScrtBalanceWithCustomClient(signingClient, treasury)
-        ).toString(),
+        (await getScrtBalanceWithCustomClient(secretjs, treasury)).toString(),
       ).to.be.equal(claim_before_bal.add(new BN(45)).toString());
 
       await expect(predictionContract.query.state()).to.respondWith({
@@ -1612,11 +1607,9 @@ describe.only('prediction', () => {
     });
   });
 
-  describe.only('permit query', () => {
+  describe('permit query', () => {
     const PERMIT_NAME = 'scrt_prediction';
-    const allowedTokens = ['secret18vd8fpwxzck93qlwghaj6arh4p7c5n8978vsyg'];
     const PERMISSIONS = ['owner'];
-    const CHAIN_ID = 'secretdev-1';
     const amount = '1000';
 
     beforeEach(async () => {
@@ -1633,21 +1626,10 @@ describe.only('prediction', () => {
         aliceViewingKey,
         null,
       );
-      await predictionContract.tx.bet(
-        {
-          account: alice,
-          transferAmount: [
-            {
-              amount,
-              denom: 'uscrt',
-            },
-          ],
-        },
-        'up',
-      );
+      await bet(predictionContract, alice, amount, 'up', assetInfo);
     });
 
-    it('query permit', async () => {
+    it('query bet with permit', async () => {
       const wallet = new Wallet(alice.account.mnemonic);
 
       const { signature } = await wallet.signAmino(alice.account.address, {
@@ -1671,36 +1653,24 @@ describe.only('prediction', () => {
         memo: '',
       });
 
-      console.log(signature);
-
       await expect(
-        predictionContract.query.bet(
-          '2',
-          aliceViewingKey,
-          alice.account.address,
+        predictionContract.query.with_permit(
+          {
+            params: {
+              permit_name: PERMIT_NAME,
+              allowed_tokens: [predictionContract.contractAddress],
+              chain_id: CHAIN_ID,
+              permissions: PERMISSIONS,
+            },
+            signature,
+          },
+          { bet: { epoch: '2' } },
         ),
       ).to.respondWith({
         amount,
         position: 'up',
         claimed: false,
       });
-
-      console.log('#$#');
-
-      const genesisRound = await predictionContract.query.with_permit(
-        {
-          params: {
-            permit_name: PERMIT_NAME,
-            allowed_tokens: allowedTokens,
-            chain_id: CHAIN_ID,
-            permissions: PERMISSIONS,
-          },
-          signature,
-        },
-        { bet: { epoch: '2' } },
-      );
-
-      console.log(genesisRound);
     });
   });
 });

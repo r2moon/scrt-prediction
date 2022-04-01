@@ -50,18 +50,32 @@ const getScrtBalance = async (account) => {
   return new BN(0);
 };
 
-const getScrtBalanceWithCustomClient = async (client, account) => {
-  const info = await client.getAccount(account.account.address);
-  console.log(info);
-  if (info === undefined || info.balance === undefined) {
+const getScrtBalanceWithCustomClient = async (secretjs, account) => {
+  const response = await secretjs.query.bank.balance({
+    address: account.account.address,
+    denom: 'uscrt',
+  });
+
+  if (response.balance) {
+    return new BN(response.balance.amount);
+  } else {
     return new BN(0);
   }
+};
 
-  const coin = info.balance.find((item) => item.denom === 'uscrt');
-  if (coin) {
-    return new BN(coin.amount);
+const sendDenom = async (secretjs, from, to, amount) => {
+  for (let toAddress of to) {
+    await secretjs.tx.bank.send(
+      {
+        fromAddress: from,
+        toAddress,
+        amount: [{ denom: 'uscrt', amount: amount }],
+      },
+      {
+        gasLimit: 200_000,
+      },
+    );
   }
-  return new BN(0);
 };
 
 module.exports = {
@@ -71,4 +85,5 @@ module.exports = {
   sleepUntil,
   getScrtBalance,
   getScrtBalanceWithCustomClient,
+  sendDenom,
 };
