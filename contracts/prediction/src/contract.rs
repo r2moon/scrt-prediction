@@ -3,7 +3,7 @@ use cosmwasm_std::{
     InitResponse, Querier, StdError, StdResult, Storage, Uint128,
 };
 
-use crate::handler::{bet, claim, create_viewing_key, set_viewing_key};
+use crate::handler::{bet, claim, create_viewing_key, revoke_permit, set_viewing_key};
 use crate::manage::{execute_round, pause, start_genesis_round, update_config, withdraw};
 use crate::query::{permit_queries, query_bet, query_config, query_round, query_state};
 use crate::state::{read_config, store_config, store_state, Config};
@@ -92,6 +92,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
         HandleMsg::StartGenesisRound {} => start_genesis_round(deps, env),
         HandleMsg::CreateViewingKey { entropy, .. } => create_viewing_key(deps, env, entropy),
         HandleMsg::SetViewingKey { key, .. } => set_viewing_key(deps, env, key),
+        HandleMsg::RevokePermit { permit_name, .. } => revoke_permit(deps, env, permit_name),
     }
 }
 

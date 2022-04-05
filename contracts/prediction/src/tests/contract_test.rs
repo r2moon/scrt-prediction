@@ -1,4 +1,4 @@
-use cosmwasm_std::testing::{mock_dependencies, mock_env};
+use cosmwasm_std::testing::{mock_dependencies, mock_env, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{from_binary, log, Api, Binary, Decimal, HumanAddr, StdError, Uint128};
 
 use prediction::{
@@ -88,6 +88,7 @@ fn test_init() {
     let config: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(
         ConfigResponse {
+            contract_addr: HumanAddr::from(MOCK_CONTRACT_ADDR),
             owner_addr: HumanAddr::from("addr"),
             operator_addr: HumanAddr::from("operator_addr"),
             treasury_addr: HumanAddr::from("treasury_addr"),
@@ -219,6 +220,7 @@ fn test_update_config() {
     let config: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(
         ConfigResponse {
+            contract_addr: HumanAddr::from(MOCK_CONTRACT_ADDR),
             owner_addr: HumanAddr::from("owner_addr1"),
             operator_addr: HumanAddr::from("operator_addr1"),
             treasury_addr: HumanAddr::from("treasury_addr1"),

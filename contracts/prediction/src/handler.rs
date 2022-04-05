@@ -5,13 +5,14 @@ use cosmwasm_std::{
 
 use crate::state::{
     read_bet, read_config, read_round, read_state, store_bet, store_round, store_viewing_key, Bet,
-    Config, Round,
+    Config, Round, PREFIX_REVOKED_PERMITS,
 };
 use prediction::{
     asset::Asset,
     prediction::{Position, State},
     viewing_key::ViewingKey,
 };
+use secret_toolkit::permit::RevokedPermits;
 
 pub fn bet<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
@@ -164,6 +165,25 @@ pub fn set_viewing_key<S: Storage, A: Api, Q: Querier>(
     Ok(HandleResponse {
         messages: vec![],
         log: vec![log("action", "set_viewing_key"), log("success", true)],
+        data: None,
+    })
+}
+
+pub fn revoke_permit<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
+    permit_name: String,
+) -> HandleResult {
+    RevokedPermits::revoke_permit(
+        &mut deps.storage,
+        PREFIX_REVOKED_PERMITS,
+        &env.message.sender,
+        &permit_name,
+    );
+
+    Ok(HandleResponse {
+        messages: vec![],
+        log: vec![log("action", "revoke_permit")],
         data: None,
     })
 }

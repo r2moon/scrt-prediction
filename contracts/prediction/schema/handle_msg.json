@@ -260,6 +260,32 @@
           }
         }
       }
+    },
+    {
+      "description": "Revoke Permit",
+      "type": "object",
+      "required": [
+        "revoke_permit"
+      ],
+      "properties": {
+        "revoke_permit": {
+          "type": "object",
+          "required": [
+            "permit_name"
+          ],
+          "properties": {
+            "padding": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "permit_name": {
+              "type": "string"
+            }
+          }
+        }
+      }
     }
   ],
   "definitions": {

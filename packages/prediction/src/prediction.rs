@@ -68,6 +68,11 @@ pub enum HandleMsg {
         key: String,
         padding: Option<String>,
     },
+    /// Revoke Permit
+    RevokePermit {
+        permit_name: String,
+        padding: Option<String>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
