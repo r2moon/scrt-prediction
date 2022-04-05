@@ -1,15 +1,15 @@
 const accounts = [
   {
     name: 'account_0',
-    address: 'secret1u675ga7k2y46grcn8u58m9ezxxq87r95n4ev0e',
+    address: 'secret1a9z99qzhmsus6mwuvx2sgak0rp9xsw59xw4ucn',
     mnemonic:
-      'banana because soul chalk focus stick dust seminar rather mixed large depend merry lion way agent must knee crisp balance month tell mystery cargo',
+      'damp day erosion private bind gas eagle dwarf young like hire believe ignore arrive wheat wheel tuition prison tape scale umbrella gallery section morning',
   },
   {
     name: 'account_1',
-    address: 'secret1065x2vc8tqp0deqr5txyfngprmm6mcv9xcualy',
+    address: 'secret1p552s3kknp8ddeh7my4q9tldah8c22zcms88q4',
     mnemonic:
-      'story bridge sunny wide ignore shine beef chapter expose weekend vacuum chuckle since stamp banana crane mercy stove choice planet super buyer april slow',
+      'brass local wheat settle dog vital word artwork clump wood lift admit pen bar modify slide metal slush tribe rookie crouch carbon remind boost',
   },
 ];
 

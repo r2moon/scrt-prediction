@@ -20,12 +20,12 @@ const {
 
 use(polarChai);
 
-describe.only('prediction', () => {
+describe('prediction', () => {
   let owner, alice, bob, carol, operator, treasury;
   let oracleContract;
   let predictionContract;
   let feeRate = 0.03;
-  let interval = 20;
+  let interval = 30;
   let graceInterval = 15;
   let assetInfo = {
     native_token: {
@@ -389,8 +389,6 @@ describe.only('prediction', () => {
       ).to.be.revertedWith('Amount is zero');
     });
 
-    // TODO test with snip20 token
-
     it('fail if paused', async () => {
       await predictionContract.tx.pause({
         account: owner,
@@ -573,8 +571,6 @@ describe.only('prediction', () => {
       expect(currentRound.down_amount).to.be.equal('600');
     });
 
-    // TODO review if bettable check enough
-
     it('fail after lock time', async () => {
       await sleep(interval);
       await expect(
@@ -619,8 +615,6 @@ describe.only('prediction', () => {
       ).to.be.revertedWith('unauthorized');
     });
 
-    // TODO check paused and how can claim
-
     it('fail if paused', async () => {
       await predictionContract.tx.pause({
         account: owner,
@@ -643,7 +637,6 @@ describe.only('prediction', () => {
       ).to.be.revertedWith('Expired');
     });
 
-    // TODO check executable enough
     it('fail if not ended', async () => {
       await expect(
         predictionContract.tx.execute_round({

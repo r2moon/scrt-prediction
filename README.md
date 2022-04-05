@@ -19,9 +19,7 @@ This repo is a price prediction contracts on [Secret Network](https://scrt.netwo
 2. Run local node
 
 ```sh
-docker run -it --rm \
- -p 26657:26657 -p 26656:26656 -p 1337:1337 \
- --name secretdev enigmampc/secret-network-sw-dev
+docker run -it -p 9091:9091 -p 1337:1337 --name secretjs-testnet enigmampc/secret-network-sw-dev:v1.2.2-1
 ```
 
 3. Update `accounts/local.js` file with the seed accounts of local node.

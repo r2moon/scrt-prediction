@@ -33,6 +33,32 @@ const bet = async (
   }
 };
 
+const betSnip20 = async (
+  snip20Contract,
+  predictionContract,
+  account,
+  amount,
+  position,
+) => {
+  const msgJson = {
+    bet: {
+      position,
+    },
+  };
+  const msgBinary = Buffer.from(JSON.stringify(msgJson)).toString('base64');
+  await snip20Contract.tx.send(
+    {
+      account,
+    },
+    amount, // amount
+    null, // memo,
+    msgBinary, // msg,
+    null, // padding,
+    predictionContract.contractAddress,
+    predictionContract.contractCodeHash,
+  );
+};
+
 const sleep = (s) => new Promise((res) => setTimeout(res, s * 1000));
 
 const sleepUntil = async (until) => {
@@ -78,12 +104,23 @@ const sendDenom = async (secretjs, from, to, amount) => {
   }
 };
 
+const getSnip20Balance = async (snip20Contract, account, viewingKey) => {
+  const balanceRes = await snip20Contract.query.balance(
+    account.account.address,
+    viewingKey,
+  );
+
+  return new BN(balanceRes.balance.amount);
+};
+
 module.exports = {
   checkLogs,
   bet,
+  betSnip20,
   sleep,
   sleepUntil,
   getScrtBalance,
   getScrtBalanceWithCustomClient,
+  getSnip20Balance,
   sendDenom,
 };
